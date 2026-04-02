@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataMigrate Hub</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --brand: #1a3a5c;
+  --brand-light: #2a5a8c;
+  --accent: #e07b30;
+  --bg: #f4f6f9;
+  --card: #ffffff;
+  --text: #1e2535;
+  --muted: #6b7a99;
+  --border: #dde3ef;
+  --radius: 10px;
+  --green: #1e7e4a;
+  --green-bg: #d4edda;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+header {
+  background: var(--brand); color: white;
+  padding: 0 28px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.logo { font-size: 19px; font-weight: 700; }
+.logo span { color: var(--accent); }
+.nav { display: flex; gap: 4px; }
+.nav-btn {
+  background: transparent; border: 1.5px solid rgba(255,255,255,0.25);
+  color: white; border-radius: 6px; padding: 6px 13px;
+  cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s;
+}
+.nav-btn:hover, .nav-btn.active { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.6); }
+
+/* HERO */
+.hero {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-light) 100%);
+  padding: 40px 28px 50px; text-align: center; color: white;
+}
+.hero h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+.hero p { font-size: 14px; opacity: 0.8; margin-bottom: 24px; }
+.search-wrap {
+  display: flex; max-width: 580px; margin: 0 auto;
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+#search-input {
+  flex: 1; padding: 13px 18px; font-size: 15px; border: none; outline: none; color: var(--text);
+}
+#search-btn {
+  background: var(--accent); border: none; color: white;
+  padding: 13px 22px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+#search-btn:hover { background: #c96b20; }
+
+/* MAIN */
+main { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+.section { display: none; }
+.section.active { display: block; }
+.section-title {
+  font-size: 18px; font-weight: 700; color: var(--brand);
+  margin-bottom: 18px; padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-title-left { display: flex; align-items: center; gap: 8px; }
+
+/* HOME TILES */
+.welcome-bar {
+  background: var(--brand); color: white; border-radius: var(--radius);
+  padding: 18px 22px; margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+.welcome-bar h2 { font-size: 17px; font-weight: 700; }
+.welcome-bar p { font-size: 13px; opacity: 0.8; margin-top: 3px; }
+.today-chip { background: rgba(255,255,255,0.15); border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 600; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.tile {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 20px 18px;
+  cursor: pointer; transition: all .15s;
+}
+.tile:hover { border-color: var(--brand); box-shadow: 0 3px 14px rgba(26,58,92,0.12); transform: translateY(-2px); }
+.tile-icon { font-size: 32px; margin-bottom: 10px; }
+.tile-title { font-size: 15px; font-weight: 700; color: var(--brand); margin-bottom: 6px; }
+.tile-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.tile-count { font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 8px; }
+
+/* SUB-TAB BAR (inside Documents section) */
+.sub-tabs {
+  display: flex; gap: 6px; margin-bottom: 22px; flex-wrap: wrap; border-bottom: 2px solid var(--border); padding-bottom: 0;
+}
+.sub-tab {
+  border: none; background: transparent; color: var(--muted);
+  padding: 9px 18px; cursor: pointer; font-size: 13px; font-weight: 600;
+  border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .15s;
+  border-radius: 6px 6px 0 0;
+}
+.sub-tab:hover { color: var(--brand); background: var(--bg); }
+.sub-tab.active { color: var(--brand); border-bottom-color: var(--brand); background: var(--card); }
+
+/* UPLOAD ZONE */
+.upload-area {
+  border: 2.5px dashed var(--border); border-radius: var(--radius);
+  padding: 36px 20px; text-align: center;
+  background: var(--card); cursor: pointer;
+  transition: all .2s; margin-bottom: 24px;
+}
+.upload-area:hover, .upload-area.drag-over {
+  border-color: var(--brand-light); background: #f0f5ff;
+}
+.upload-icon { font-size: 40px; margin-bottom: 10px; }
+.upload-title { font-size: 16px; font-weight: 600; color: var(--brand); margin-bottom: 6px; }
+.upload-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+.upload-btn {
+  background: var(--brand); color: white; border: none; border-radius: 6px;
+  padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s;
+}
+.upload-btn:hover { background: var(--brand-light); }
+#file-input { display: none; }
+#file-input-notes { display: none; }
+
+/* MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45); z-index: 500;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--card); border-radius: 14px;
+  padding: 28px; max-width: 480px; width: 90%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+}
+.modal h3 { font-size: 17px; font-weight: 700; color: var(--brand); margin-bottom: 6px; }
+.modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.modal label { font-size: 13px; font-weight: 600; color: var(--text); display: block; margin-bottom: 6px; }
+.modal input[type=text], .modal select, .modal textarea {
+  width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+  border-radius: 7px; font-size: 14px; color: var(--text);
+  outline: none; transition: border .15s; font-family: inherit;
+}
+.modal input[type=text]:focus, .modal select:focus, .modal textarea:focus { border-color: var(--brand-light); }
+.modal textarea { resize: vertical; min-height: 70px; }
+.modal-field { margin-bottom: 14px; }
+.modal-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-primary {
+  flex: 1; background: var(--brand); color: white; border: none;
+  border-radius: 7px; padding: 11px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.btn-primary:hover { background: var(--brand-light); }
+.btn-secondary {
+  background: var(--bg); color: var(--muted); border: 1.5px solid var(--border);
+  border-radius: 7px; padding: 11px 18px; font-size: 14px;
+  cursor: pointer; transition: all .15s;
+}
+.btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+
+/* PROCESSING SPINNER */
+.processing {
+  display: none; align-items: center; gap: 12px;
+  background: #e8f4ff; border: 1.5px solid #b5d4f4; border-radius: 8px;
+  padding: 12px 16px; font-size: 13px; color: var(--brand); margin-bottom: 16px;
+}
+.processing.show { display: flex; }
+.spinner {
+  width: 18px; height: 18px; border: 2.5px solid #b5d4f4;
+  border-top-color: var(--brand); border-radius: 50%;
+  animation: spin 0.7s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* SUCCESS TOAST */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--green); color: white;
+  border-radius: 8px; padding: 12px 18px;
+  font-size: 14px; font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  z-index: 999; opacity: 0; transform: translateY(20px);
+  transition: all .3s; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* DOC GRID */
+.docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.doc-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+  display: flex; flex-direction: column; gap: 6px; transition: all .15s;
+}
+.doc-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.doc-card-icon { font-size: 26px; flex-shrink: 0; }
+.doc-card-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.doc-card-desc { font-size: 12px; color: var(--muted); line-height: 1.5; flex: 1; }
+.doc-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.doc-card-actions { display: flex; gap: 6px; }
+.doc-btn {
+  border: 1.5px solid var(--border); background: var(--bg); color: var(--brand);
+  border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 600;
+  transition: all .15s;
+}
+.doc-btn:hover { background: var(--brand); color: white; border-color: var(--brand); }
+.doc-btn.danger:hover { background: #c0392b; border-color: #c0392b; color: white; }
+.tag {
+  font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.tag-tool { background: #d8eaf5; color: #1a4a6c; }
+.tag-guide { background: #dff0d8; color: #2a6a3a; }
+.tag-project { background: #fde8d8; color: #8c3a10; }
+
+/* DOC VIEWER */
+.doc-viewer {
+  display: none; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 28px;
+}
+.doc-viewer.open { display: block; }
+.doc-viewer-back {
+  background: none; border: 1.5px solid var(--border); color: var(--brand);
+  border-radius: 6px; padding: 7px 14px; cursor: pointer; font-size: 13px;
+  font-weight: 600; margin-bottom: 22px; transition: all .15s;
+}
+.doc-viewer-back:hover { background: var(--brand); color: white; border-color: var(--brand); }
+#doc-content img { max-width: 100%; }
+#doc-content table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+#doc-content th { background: var(--brand); color: white; padding: 9px 12px; text-align: left; }
+#doc-content td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+#doc-content tr:nth-child(even) td { background: var(--bg); }
+#doc-content h1 { font-size: 20px; color: var(--brand); margin-bottom: 14px; }
+#doc-content h2 { font-size: 16px; color: var(--brand); margin: 20px 0 8px; }
+#doc-content p { font-size: 14px; line-height: 1.8; margin-bottom: 10px; }
+#doc-content ul, #doc-content ol { margin: 8px 0 14px 22px; }
+#doc-content li { font-size: 14px; line-height: 1.7; margin-bottom: 3px; }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+.empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+.empty-state p { font-size: 13px; }
+
+/* SEARCH RESULTS */
+.result-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  margin-bottom: 12px; cursor: pointer; transition: all .15s;
+}
+.result-card:hover { border-color: var(--brand-light); box-shadow: 0 2px 10px rgba(26,58,92,0.1); }
+.result-title { font-size: 15px; font-weight: 600; color: var(--brand); margin-bottom: 5px; }
+.result-excerpt { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.result-excerpt mark { background: #fff3cd; color: var(--text); border-radius: 2px; padding: 0 2px; }
+.result-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.no-results { text-align: center; padding: 50px 20px; color: var(--muted); }
+
+/* CALENDAR */
+.cal-table { width: 100%; background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.cal-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cal-table th { background: var(--brand); color: white; padding: 11px 14px; text-align: left; font-weight: 600; }
+.cal-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.cal-table tr:last-child td { border-bottom: none; }
+.cal-table tr:hover td { background: var(--bg); }
+.cal-table .month-row td { background: var(--bg); font-weight: 700; font-size: 12px; color: var(--brand); text-transform: uppercase; letter-spacing: 0.5px; padding: 7px 14px; }
+.status-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; }
+.s-confirmed { background: var(--green); }
+.s-upcoming { background: #3b8bd4; }
+.s-ongoing { background: #8e44ad; }
+.s-completed { background: #27ae60; }
+.s-tbc { background: var(--accent); }
+.date-chip { background: #e8f0fb; color: var(--brand); font-weight: 600; font-size: 12px; padding: 3px 9px; border-radius: 5px; }
+.cal-legend { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.cal-legend span { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+
+/* DELETE CONFIRM */
+.delete-confirm {
+  display: none; background: #fff0f0; border: 1.5px solid #f5c1c1;
+  border-radius: 8px; padding: 12px 14px; font-size: 13px;
+  color: #8c1a1a; margin-top: 8px;
+}
+.delete-confirm.show { display: block; }
+.delete-confirm strong { display: block; margin-bottom: 8px; }
+.delete-confirm-actions { display: flex; gap: 8px; }
+.btn-delete { background: #c0392b; color: white; border: none; border-radius: 5px; padding: 6px 14px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.btn-cancel-del { background: var(--bg); border: 1.5px solid var(--border); color: var(--muted); border-radius: 5px; padding: 6px 14px; cursor: pointer; font-size: 12px; }
+
+/* TOOLS & VERSIONS TABLE */
+.tools-table-wrap {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 20px;
+}
+.tools-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tools-table th {
+  background: var(--brand); color: white; padding: 11px 14px;
+  text-align: left; font-weight: 600; white-space: nowrap;
+}
+.tools-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.tools-table tr:last-child td { border-bottom: none; }
+.tools-table tr:hover td { background: var(--bg); }
+.tools-table input[type=text], .tools-table textarea {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 5px;
+  padding: 5px 8px; font-size: 12px; font-family: inherit; background: var(--bg);
+  color: var(--text); outline: none; transition: border .15s; resize: none;
+}
+.tools-table input[type=text]:focus, .tools-table textarea:focus { border-color: var(--brand-light); background: white; }
+.tools-table select {
+  border: 1.5px solid var(--border); border-radius: 5px;
+  padding: 5px 8px; font-size: 12px; font-family: inherit;
+  background: var(--bg); color: var(--text); outline: none;
+  cursor: pointer; width: 100%; transition: border .15s;
+}
+.tools-table select:focus { border-color: var(--brand-light); background: white; }
+.add-row-btn {
+  background: var(--bg); border: 1.5px dashed var(--border); color: var(--muted);
+  border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .15s; margin-top: 12px;
+}
+.add-row-btn:hover { border-color: var(--brand); color: var(--brand); background: #f0f5ff; }
+.del-row-btn {
+  background: none; border: none; cursor: pointer; color: #c0392b;
+  font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 4px;
+  transition: background .15s;
+}
+.del-row-btn:hover { background: #fff0f0; }
+@keyframes rowPulse {
+  0%   { background: #fff8e1; box-shadow: inset 0 0 0 2px #e07b30; }
+  60%  { background: #fff3cd; box-shadow: inset 0 0 0 2px #e07b30; }
+  100% { background: transparent; box-shadow: none; }
+}
+.row-highlight td { animation: rowPulse 2.5s ease forwards; }
+
+/* PROJECT NOTES - EXCEL VIEWER */
+.excel-viewer {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.excel-sheet-tabs {
+  display: flex; gap: 0; background: var(--bg); border-bottom: 1.5px solid var(--border);
+  overflow-x: auto; padding: 0 12px;
+}
+.excel-sheet-tab {
+  border: none; background: transparent; color: var(--muted);
+  padding: 9px 16px; cursor: pointer; font-size: 12px; font-weight: 600;
+  border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap;
+  transition: all .15s;
+}
+.excel-sheet-tab.active { color: var(--brand); border-bottom-color: var(--brand); background: var(--card); }
+.excel-sheet-tab:hover { color: var(--brand); }
+.excel-content-wrap {
+  overflow-x: auto; overflow-y: auto; max-height: 65vh; padding: 0;
+}
+.excel-content-wrap table {
+  border-collapse: collapse; font-size: 12px; white-space: nowrap; min-width: 100%;
+}
+.excel-content-wrap th, .excel-content-wrap td {
+  border: 1px solid var(--border); padding: 6px 12px; text-align: left;
+}
+.excel-content-wrap th {
+  background: var(--brand); color: white; font-weight: 600;
+  position: sticky; top: 0; z-index: 1;
+}
+.excel-content-wrap tr:nth-child(even) td { background: #f8fafd; }
+.excel-content-wrap tr:hover td { background: #eef4fb; }
+.excel-upload-zone {
+  border: 2.5px dashed var(--border); border-radius: var(--radius);
+  padding: 40px 20px; text-align: center; background: var(--card);
+  cursor: pointer; transition: all .2s; margin-bottom: 20px;
+}
+.excel-upload-zone:hover { border-color: var(--brand-light); background: #f0f5ff; }
+.notes-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.notes-item {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.notes-item-name { font-size: 14px; font-weight: 600; color: var(--brand); }
+.notes-item-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.notes-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.notes-viewer { margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo"><img src="data:image/png;base64,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" alt="DL &amp; Associates" style="height:44px;display:block"></div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showSection('home')">🏠 Home</button>
+    <button class="nav-btn" onclick="showSection('docs')">📁 Documents</button>
+    <button class="nav-btn" onclick="showSection('tools')">🛠️ Tools & Versions</button>
+    <button class="nav-btn" onclick="showSection('calendar')">📅 Go-Live Calendar</button>
+  </nav>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Internal Knowledge Hub</h1>
+  <p>Search tools, guides, project notes, and go-live dates — all in one place</p>
+  <div class="search-wrap">
+    <input id="search-input" type="text" placeholder="Search by keyword, project name, tool name…" onkeydown="if(event.key==='Enter')doSearch()">
+    <button id="search-btn" onclick="doSearch()">Search</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+
+  <!-- SEARCH RESULTS -->
+  <div id="section-search" class="section">
+    <div class="section-title"><div class="section-title-left">🔍 Search Results</div></div>
+    <div id="search-count" style="font-size:13px;color:var(--muted);margin-bottom:16px"></div>
+    <div id="search-list"></div>
+  </div>
+
+  <!-- HOME -->
+  <div id="section-home" class="section active">
+    <div class="welcome-bar" style="align-items:stretch;gap:14px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:200px">
+        <svg width="36" height="36" viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+          <circle cx="21" cy="21" r="18" fill="url(#wbGlobe)"/>
+          <circle cx="26" cy="17" r="13" fill="rgba(26,58,92,0.5)"/>
+          <circle cx="30" cy="8" r="2.5" fill="#e07b30"/>
+          <circle cx="35" cy="5" r="1.8" fill="#e07b30" opacity="0.7"/>
+          <circle cx="33" cy="12" r="1.4" fill="#e07b30" opacity="0.5"/>
+          <defs>
+            <radialGradient id="wbGlobe" cx="40%" cy="40%">
+              <stop offset="0%" stop-color="#8a70e0"/>
+              <stop offset="100%" stop-color="#3a2a9a"/>
+            </radialGradient>
+          </defs>
+        </svg>
+        <div>
+          <h2 style="font-size:17px">DL &amp; Associates <span style="font-size:11px;font-weight:500;opacity:0.65">.LLC</span></h2>
+          <p style="margin-top:2px;opacity:0.75;font-size:12px">DataMigrate Hub — Internal Knowledge Portal</p>
+        </div>
+      </div>
+      <div id="event-reminder-display" onclick="openEventModal()" style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px 16px;min-width:240px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;transition:background .15s" onmouseenter="this.style.background='rgba(255,255,255,0.2)'" onmouseleave="this.style.background='rgba(255,255,255,0.12)'">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px">📌</span>
+          <div>
+            <div style="font-size:10px;font-weight:700;opacity:0.65;text-transform:uppercase;letter-spacing:0.5px">Upcoming Event</div>
+            <div id="event-label" style="font-size:13px;font-weight:700;margin-top:1px">No event set</div>
+            <div id="event-date-label" style="font-size:11px;opacity:0.7;margin-top:1px"></div>
+          </div>
+        </div>
+        <span style="font-size:11px;opacity:0.55;font-weight:600">Edit ✎</span>
+      </div>
+      <div class="today-chip" id="today-chip"></div>
+    </div>
+    <div class="tiles">
+      <div class="tile" onclick="showSection('docs'); switchSubTab('all')">
+        <div class="tile-icon">📁</div>
+        <div class="tile-title">Document Library</div>
+        <div class="tile-desc">Upload and browse all Word & Excel documents</div>
+        <div class="tile-count" id="home-count-doc"></div>
+      </div>
+      <div class="tile" onclick="showSection('tools')">
+        <div class="tile-icon">🛠️</div>
+        <div class="tile-title">Tools & Versions</div>
+        <div class="tile-desc">Internal tool version tracking and migration types</div>
+        <div class="tile-count" id="home-count-tool"></div>
+      </div>
+      <div class="tile" onclick="showSection('docs'); switchSubTab('guides')">
+        <div class="tile-icon">📖</div>
+        <div class="tile-title">Guides & Concepts</div>
+        <div class="tile-desc">Step-by-step process guides and concept explainers</div>
+        <div class="tile-count" id="home-count-guide"></div>
+      </div>
+      <div class="tile" onclick="showSection('docs'); switchSubTab('notes')">
+        <div class="tile-icon">📋</div>
+        <div class="tile-title">Project Notes</div>
+        <div class="tile-desc">Per-project Excel-based migration notes</div>
+        <div class="tile-count" id="home-count-notes"></div>
+      </div>
+      <div class="tile" onclick="showSection('calendar')">
+        <div class="tile-icon">📅</div>
+        <div class="tile-title">Go-Live Calendar</div>
+        <div class="tile-desc">Cut-off, Phase 1, and go-live dates</div>
+        <div class="tile-count" id="home-count-cal"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS (with sub-tabs: All, Guides, Project Notes) -->
+  <div id="section-docs" class="section">
+    <div class="section-title">
+      <div class="section-title-left">📁 Document Library</div>
+      <button class="upload-btn" id="upload-doc-btn" onclick="openUpload()" style="display:none">⬆ Upload Document</button>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-subtab="all" onclick="switchSubTab('all')">📁 All Documents</button>
+      <button class="sub-tab" data-subtab="guides" onclick="switchSubTab('guides')">📖 Guides</button>
+      <button class="sub-tab" data-subtab="notes" onclick="switchSubTab('notes')">📋 Project Notes</button>
+    </div>
+
+    <!-- ALL DOCS panel -->
+    <div id="subtab-all" class="subtab-panel">
+      <div class="upload-area" id="drop-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <div class="upload-icon">📂</div>
+        <div class="upload-title">Drag & drop your Word or Excel file here</div>
+        <div class="upload-sub">Supports .docx (Word) and .xlsx (Excel)<br>Your file contents are read and added to the library instantly</div>
+        <button class="upload-btn" onclick="event.stopPropagation(); document.getElementById('file-input').click()">Browse Files</button>
+      </div>
+      <input type="file" id="file-input" accept=".docx,.xlsx" onchange="handleFileSelect(event)">
+
+      <div class="processing" id="processing-bar">
+        <div class="spinner"></div>
+        <span>Reading file…</span>
+      </div>
+
+      <!-- Doc viewer -->
+      <div class="doc-viewer" id="doc-viewer">
+        <button class="doc-viewer-back" onclick="closeDocViewer()">← Back to Documents</button>
+        <div id="doc-content"></div>
+      </div>
+
+      <!-- Doc grid -->
+      <div class="docs-grid" id="docs-grid"></div>
+    </div>
+
+    <!-- GUIDES panel -->
+    <div id="subtab-guides" class="subtab-panel" style="display:none">
+      <div class="docs-grid" id="guides-grid"></div>
+    </div>
+
+    <!-- PROJECT NOTES panel -->
+    <div id="subtab-notes" class="subtab-panel" style="display:none">
+      <div class="excel-upload-zone" id="notes-drop-zone"
+           onclick="document.getElementById('file-input-notes').click()"
+           ondragover="handleNotesDragOver(event)" ondragleave="handleNotesDragLeave(event)" ondrop="handleNotesDrop(event)">
+        <div class="upload-icon">📊</div>
+        <div class="upload-title">Drag & drop your Excel file here</div>
+        <div class="upload-sub">Supports .xlsx (Excel) only<br>Files open in correct table format with all sheets</div>
+        <button class="upload-btn" onclick="event.stopPropagation(); document.getElementById('file-input-notes').click()">Browse Excel Files</button>
+      </div>
+      <input type="file" id="file-input-notes" accept=".xlsx" onchange="handleNotesFileSelect(event)">
+
+      <div class="processing" id="notes-processing-bar">
+        <div class="spinner"></div>
+        <span>Reading Excel file…</span>
+      </div>
+
+      <!-- Notes list -->
+      <div class="notes-list" id="notes-list"></div>
+
+      <!-- Excel Viewer -->
+      <div class="notes-viewer" id="notes-viewer" style="display:none">
+        <button class="doc-viewer-back" onclick="closeNotesViewer()">← Back to Project Notes</button>
+        <div class="excel-viewer" id="excel-viewer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLS & VERSIONS -->
+  <div id="section-tools" class="section">
+    <div class="section-title">
+      <div class="section-title-left">🛠️ Tools &amp; Versions</div>
+    </div>
+
+    <div class="tools-table-wrap">
+      <table class="tools-table">
+        <thead>
+          <tr>
+            <th style="width:120px">Version</th>
+            <th style="width:180px">Function</th>
+            <th>Notes</th>
+            <th style="width:160px">Migration Type</th>
+            <th style="width:180px">Project Used</th>
+            <th style="width:44px"></th>
+          </tr>
+        </thead>
+        <tbody id="tools-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addToolRow()">+ Add Row</button>
+  </div>
+
+  <!-- CALENDAR -->
+  <div id="section-calendar" class="section">
+    <div class="section-title">
+      <div class="section-title-left">📅 Go-Live Calendar</div>
+      <button class="upload-btn" onclick="openCalendarAdd()">+ Add Project</button>
+    </div>
+    <div class="cal-legend">
+      <span><span class="status-dot s-upcoming"></span>Upcoming</span>
+      <span><span class="status-dot s-confirmed"></span>Confirmed</span>
+      <span><span class="status-dot s-ongoing"></span>Ongoing</span>
+      <span><span class="status-dot s-completed"></span>Completed</span>
+      <span><span class="status-dot s-tbc"></span>TBC</span>
+    </div>
+    <div class="cal-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>✂️ Cut-off Date</th>
+            <th>🚀 Phase 1 Date</th>
+            <th>✅ Go-Live Date</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cal-body"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="cal-empty" style="display:none">
+      <div class="empty-state-icon">📅</div>
+      <h3>No projects added yet</h3>
+      <p>Click "Add Project" to add your first entry</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- UPLOAD / METADATA MODAL -->
+<div class="modal-overlay" id="meta-modal">
+  <div class="modal">
+    <h3>Add document details</h3>
+    <p>Fill in a few details to make this document searchable</p>
+    <div class="processing" id="modal-processing" style="margin-bottom:14px">
+      <div class="spinner"></div>
+      <span>Reading your file, please wait…</span>
+    </div>
+    <div id="modal-form">
+      <div class="modal-field">
+        <label>Document title</label>
+        <input type="text" id="meta-name" placeholder="e.g. MigrationRunner Tool Guide">
+      </div>
+      <div class="modal-field">
+        <label>Short description</label>
+        <textarea id="meta-desc" rows="2" placeholder="e.g. Step-by-step guide for running the MigrationRunner tool"></textarea>
+      </div>
+      <div class="modal-field">
+        <label>Document type</label>
+        <select id="meta-type">
+          <option value="guide">📖 Guide</option>
+          <option value="doc">📄 General Document</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Search keywords</label>
+        <input type="text" id="meta-tags" placeholder="e.g. migration, runner, batch, tool">
+        <div class="modal-hint">Separate with commas.</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveDocument()">Add to Library</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR ADD MODAL -->
+<div class="modal-overlay" id="cal-modal">
+  <div class="modal" style="max-width:540px">
+    <h3>Add Go-Live Project</h3>
+    <p>Enter the three key milestone dates for this project</p>
+    <div class="modal-field">
+      <label>Project name</label>
+      <input type="text" id="cal-project" placeholder="e.g. Apex Retail">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="modal-field">
+        <label>✂️ Cut-off Date</label>
+        <input type="date" id="cal-cutoff">
+      </div>
+      <div class="modal-field">
+        <label>🚀 Phase 1 Date</label>
+        <input type="date" id="cal-phase1">
+      </div>
+      <div class="modal-field">
+        <label>✅ Go-Live Date</label>
+        <input type="date" id="cal-golive">
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Status</label>
+      <select id="cal-status">
+        <option value="upcoming">Upcoming</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="ongoing">Ongoing</option>
+        <option value="completed">Completed</option>
+        <option value="tbc">TBC</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Notes (optional)</label>
+      <input type="text" id="cal-notes" placeholder="e.g. After-hours migration required">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeCalModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveCalEntry()">Add to Calendar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT REMINDER MODAL -->
+<div class="modal-overlay" id="event-modal">
+  <div class="modal" style="max-width:420px">
+    <h3>📌 Upcoming Event Reminder</h3>
+    <p>Set one upcoming event visible on the home screen</p>
+    <div class="modal-field">
+      <label>Event name</label>
+      <input type="text" id="event-name-input" placeholder="e.g. Q2 Migration Go-Live">
+    </div>
+    <div class="modal-field">
+      <label>Event date</label>
+      <input type="date" id="event-date-input">
+    </div>
+    <div class="modal-field">
+      <label>Notes (optional)</label>
+      <input type="text" id="event-notes-input" placeholder="e.g. All hands required">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeEventModal()">Cancel</button>
+      <button class="btn-secondary" style="color:#c0392b;border-color:#f5c1c1" onclick="clearEvent()">Clear</button>
+      <button class="btn-primary" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  DATA STORE
+// ═══════════════════════════════════════════════════
+let documents   = JSON.parse(localStorage.getItem('intranet_docs')  || '[]');
+let calEntries  = JSON.parse(localStorage.getItem('intranet_cal')   || '[]');
+let toolRows    = JSON.parse(localStorage.getItem('intranet_tools') || '[]');
+let noteFiles   = JSON.parse(localStorage.getItem('intranet_notes') || '[]');
+
+let pendingFileContent = '';
+let pendingFileName    = '';
+let activeNotesId      = null;
+
+function saveDocs()  { localStorage.setItem('intranet_docs',  JSON.stringify(documents));  }
+function saveCal()   { localStorage.setItem('intranet_cal',   JSON.stringify(calEntries)); }
+function saveTools() { localStorage.setItem('intranet_tools', JSON.stringify(toolRows));   }
+function saveNotes() { localStorage.setItem('intranet_notes', JSON.stringify(noteFiles));  }
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('today-chip').textContent =
+    new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+  renderDocs();
+  renderGuidesGrid();
+  renderCal();
+  renderToolsTable();
+  renderNotesList();
+  updateHomeCounts();
+});
+
+// ═══════════════════════════════════════════════════
+//  SECTION & SUB-TAB NAV
+// ═══════════════════════════════════════════════════
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  const idx = { home:0, docs:1, tools:2, calendar:3 }[name];
+  if (idx !== undefined) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if (name === 'docs') closeDocViewer();
+}
+
+function switchSubTab(tab) {
+  document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.sub-tab[data-subtab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.subtab-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('subtab-' + tab).style.display = '';
+  if (tab === 'notes') {
+    closeNotesViewer();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  FILE UPLOAD (All Documents tab)
+// ═══════════════════════════════════════════════════
+function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function handleDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileSelect(e) { const file = e.target.files[0]; if (file) processFile(file); e.target.value = ''; }
+
+function processFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['docx','xlsx'].includes(ext)) { showToast('⚠️ Please upload a .docx or .xlsx file only', true); return; }
+  pendingFileName = file.name.replace(/\.(docx|xlsx)$/i, '');
+  document.getElementById('meta-modal').classList.add('open');
+  document.getElementById('modal-processing').classList.add('show');
+  document.getElementById('modal-form').style.opacity = '0.4';
+  document.getElementById('modal-form').style.pointerEvents = 'none';
+  document.getElementById('meta-name').value = pendingFileName;
+  document.getElementById('meta-tags').value = '';
+  document.getElementById('meta-desc').value = '';
+
+  if (ext === 'docx') {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const result = await mammoth.convertToHtml({ arrayBuffer: e.target.result });
+        pendingFileContent = result.value;
+        finishLoading();
+      } catch(err) { showToast('⚠️ Could not read Word file.', true); closeModal(); }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        let html = '';
+        wb.SheetNames.forEach(sheetName => {
+          const ws = wb.Sheets[sheetName];
+          html += `<h2 style="margin:16px 0 8px;font-size:15px;color:var(--brand)">${sheetName}</h2>`;
+          const sheetHtml = XLSX.utils.sheet_to_html(ws, { editable: false });
+          html += sheetHtml
+            .replace(/<table/g, '<table style="width:100%;border-collapse:collapse;font-size:12px;margin:0 0 20px;white-space:nowrap"')
+            .replace(/<td/g, '<td style="padding:6px 10px;border:1px solid #dde3ef;vertical-align:middle"')
+            .replace(/<th/g, '<th style="padding:7px 10px;background:#1a3a5c;color:white;font-weight:600;border:1px solid #1a3a5c;white-space:nowrap"');
+        });
+        pendingFileContent = `<div style="overflow-x:auto">${html}</div>`;
+        finishLoading();
+      } catch(err) { showToast('⚠️ Could not read Excel file.', true); closeModal(); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function finishLoading() {
+  document.getElementById('modal-processing').classList.remove('show');
+  document.getElementById('modal-form').style.opacity = '1';
+  document.getElementById('modal-form').style.pointerEvents = '';
+  const words = pendingFileName.replace(/[-_]/g,' ').split(' ').filter(w=>w.length>2).join(', ');
+  if (!document.getElementById('meta-tags').value) document.getElementById('meta-tags').value = words;
+}
+
+function saveDocument() {
+  const name = document.getElementById('meta-name').value.trim();
+  if (!name) { document.getElementById('meta-name').focus(); return; }
+  const desc  = document.getElementById('meta-desc').value.trim() || 'Uploaded document';
+  const type  = document.getElementById('meta-type').value;
+  const tags  = document.getElementById('meta-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  documents.unshift({ id: Date.now(), name, desc, type, tags, content: pendingFileContent, addedOn: new Date().toLocaleDateString('en-GB') });
+  saveDocs();
+  closeModal();
+  renderDocs();
+  renderGuidesGrid();
+  updateHomeCounts();
+  showToast(`✅ "${name}" added to the library`);
+}
+
+function closeModal() {
+  document.getElementById('meta-modal').classList.remove('open');
+  pendingFileContent = ''; pendingFileName = '';
+}
+
+// ═══════════════════════════════════════════════════
+//  DOCUMENT LIBRARY
+// ═══════════════════════════════════════════════════
+const typeIcons = { tool:'🛠️', guide:'📖', doc:'📄', project:'📋' };
+const typeTagClass = { tool:'tag-tool', guide:'tag-guide', doc:'tag-guide', project:'tag-project' };
+
+function renderDocs() {
+  renderGrid(documents, 'docs-grid');
+}
+function renderGuidesGrid() {
+  renderGrid(documents.filter(d => d.type === 'guide' || d.type === 'doc'), 'guides-grid');
+}
+
+function renderGrid(list, gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-state-icon">📂</div>
+      <h3>No documents yet</h3>
+      <p>Upload a Word or Excel file to get started</p>
+    </div>`; return;
+  }
+  grid.innerHTML = list.map(doc => `
+    <div class="doc-card" id="card-${doc.id}">
+      <div class="doc-card-header">
+        <div>
+          <div class="doc-card-icon">${typeIcons[doc.type]||'📄'}</div>
+          <div class="doc-card-name">${doc.name}</div>
+        </div>
+        <span class="tag ${typeTagClass[doc.type]||''}">${doc.type}</span>
+      </div>
+      <div class="doc-card-desc">${doc.desc}</div>
+      <div class="doc-card-footer">
+        <span style="font-size:11px;color:var(--muted)">Added ${doc.addedOn||''}</span>
+        <div class="doc-card-actions">
+          <button class="doc-btn" onclick="openDoc(${doc.id})">Open</button>
+          <button class="doc-btn danger" onclick="confirmDelete(${doc.id})">Delete</button>
+        </div>
+      </div>
+      <div class="delete-confirm" id="del-${doc.id}">
+        <strong>Delete "${doc.name}"?</strong>
+        <div class="delete-confirm-actions">
+          <button class="btn-delete" onclick="deleteDoc(${doc.id})">Yes, delete</button>
+          <button class="btn-cancel-del" onclick="cancelDelete(${doc.id})">Cancel</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openDoc(id) {
+  const doc = documents.find(d => d.id === id);
+  if (!doc) return;
+  document.getElementById('docs-grid').style.display = 'none';
+  const viewer = document.getElementById('doc-viewer');
+  viewer.classList.add('open');
+  document.getElementById('doc-content').innerHTML = `
+    <h1>${doc.name}</h1>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">
+      <span class="tag ${typeTagClass[doc.type]}">${doc.type}</span>
+      &nbsp; Added ${doc.addedOn||''}
+    </p>
+    ${doc.content}`;
+  viewer.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function closeDocViewer() {
+  document.getElementById('doc-viewer').classList.remove('open');
+  document.getElementById('docs-grid').style.display = '';
+}
+
+function confirmDelete(id) {
+  document.querySelectorAll('.delete-confirm').forEach(el => el.classList.remove('show'));
+  document.getElementById('del-' + id).classList.add('show');
+}
+function cancelDelete(id) { document.getElementById('del-' + id).classList.remove('show'); }
+function deleteDoc(id) {
+  documents = documents.filter(d => d.id !== id);
+  saveDocs(); renderDocs(); renderGuidesGrid(); updateHomeCounts();
+  showToast('🗑️ Document deleted');
+}
+
+// ═══════════════════════════════════════════════════
+//  PROJECT NOTES (Excel-only upload)
+// ═══════════════════════════════════════════════════
+function handleNotesDragOver(e) { e.preventDefault(); document.getElementById('notes-drop-zone').classList.add('drag-over'); }
+function handleNotesDragLeave()  { document.getElementById('notes-drop-zone').classList.remove('drag-over'); }
+function handleNotesDrop(e) {
+  e.preventDefault();
+  document.getElementById('notes-drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processNotesFile(file);
+}
+function handleNotesFileSelect(e) { const file = e.target.files[0]; if (file) processNotesFile(file); e.target.value=''; }
+
+function processNotesFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext !== 'xlsx') { showToast('⚠️ Project Notes only accepts .xlsx Excel files', true); return; }
+  const bar = document.getElementById('notes-processing-bar');
+  bar.classList.add('show');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      // Build per-sheet HTML tables preserving alignment/formatting
+      const sheets = {};
+      wb.SheetNames.forEach(sheetName => {
+        const ws = wb.Sheets[sheetName];
+        // Use sheet_to_json for rows to preserve numbers correctly
+        const jsonData = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+        if (!jsonData.length) { sheets[sheetName] = '<p style="padding:16px;color:var(--muted)">Empty sheet</p>'; return; }
+        // Find max cols
+        const maxCols = jsonData.reduce((m,r) => Math.max(m, r.length), 0);
+        let thtml = '<table><thead><tr>';
+        // Use first row as header
+        const header = jsonData[0];
+        for (let c = 0; c < maxCols; c++) {
+          thtml += `<th>${header[c] !== undefined ? escHtml(String(header[c])) : ''}</th>`;
+        }
+        thtml += '</tr></thead><tbody>';
+        for (let r = 1; r < jsonData.length; r++) {
+          const row = jsonData[r];
+          // Skip entirely empty rows
+          if (row.every(cell => cell === '' || cell === null || cell === undefined)) continue;
+          thtml += '<tr>';
+          for (let c = 0; c < maxCols; c++) {
+            const val = row[c] !== undefined ? escHtml(String(row[c])) : '';
+            // Right-align numbers
+            const isNum = row[c] !== '' && !isNaN(Number(row[c])) && row[c] !== null;
+            thtml += `<td style="${isNum ? 'text-align:right' : ''}">${val}</td>`;
+          }
+          thtml += '</tr>';
+        }
+        thtml += '</tbody></table>';
+        sheets[sheetName] = thtml;
+      });
+
+      const entry = {
+        id: Date.now(),
+        name: file.name.replace(/\.xlsx$/i, ''),
+        addedOn: new Date().toLocaleDateString('en-GB'),
+        sheets
+      };
+      noteFiles.unshift(entry);
+      saveNotes();
+      bar.classList.remove('show');
+      renderNotesList();
+      updateHomeCounts();
+      showToast(`✅ "${entry.name}" added to Project Notes`);
+    } catch(err) {
+      bar.classList.remove('show');
+      showToast('⚠️ Could not read Excel file.', true);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderNotesList() {
+  const list = document.getElementById('notes-list');
+  if (!noteFiles.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">📊</div>
+      <h3>No project notes yet</h3>
+      <p>Upload an Excel file above to get started</p>
+    </div>`; return;
+  }
+  list.innerHTML = noteFiles.map(n => `
+    <div class="notes-item">
+      <div>
+        <div class="notes-item-name">📊 ${n.name}</div>
+        <div class="notes-item-date">Added ${n.addedOn} &nbsp;·&nbsp; ${Object.keys(n.sheets).length} sheet(s)</div>
+      </div>
+      <div class="notes-item-actions">
+        <button class="doc-btn" onclick="openNote(${n.id})">Open</button>
+        <button class="doc-btn danger" onclick="deleteNote(${n.id})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function openNote(id) {
+  const note = noteFiles.find(n => n.id === id);
+  if (!note) return;
+  activeNotesId = id;
+  document.getElementById('notes-drop-zone').style.display = 'none';
+  document.getElementById('notes-list').style.display = 'none';
+  const viewer = document.getElementById('notes-viewer');
+  viewer.style.display = '';
+
+  const sheetNames = Object.keys(note.sheets);
+  const tabs = sheetNames.map((s,i) =>
+    `<button class="excel-sheet-tab${i===0?' active':''}" onclick="switchNotesSheet(${id},'${s.replace(/'/g,"\\'")}',this)">${s}</button>`
+  ).join('');
+
+  document.getElementById('excel-viewer').innerHTML = `
+    <div style="padding:12px 18px;border-bottom:1.5px solid var(--border);font-size:14px;font-weight:700;color:var(--brand)">
+      📊 ${note.name}
+    </div>
+    <div class="excel-sheet-tabs">${tabs}</div>
+    <div class="excel-content-wrap" id="excel-content-area">
+      ${note.sheets[sheetNames[0]] || ''}
+    </div>`;
+  viewer.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function switchNotesSheet(id, sheetName, btn) {
+  const note = noteFiles.find(n => n.id === id);
+  if (!note) return;
+  document.querySelectorAll('.excel-sheet-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('excel-content-area').innerHTML = note.sheets[sheetName] || '<p style="padding:16px;color:var(--muted)">Empty sheet</p>';
+}
+
+function closeNotesViewer() {
+  document.getElementById('notes-viewer').style.display = 'none';
+  document.getElementById('notes-drop-zone').style.display = '';
+  document.getElementById('notes-list').style.display = '';
+  activeNotesId = null;
+}
+
+function deleteNote(id) {
+  noteFiles = noteFiles.filter(n => n.id !== id);
+  saveNotes(); renderNotesList(); updateHomeCounts();
+  if (activeNotesId === id) closeNotesViewer();
+  showToast('🗑️ Note deleted');
+}
+
+// ═══════════════════════════════════════════════════
+//  TOOLS & VERSIONS TABLE
+// ═══════════════════════════════════════════════════
+const MIGRATION_TYPES = [
+  { value: '', label: '— Select type —' },
+  { value: 'work_doesnt_work', label: "Doesn't Work" },
+  { value: 'QB2QB',  label: 'QB2QB' },
+  { value: 'QB2QBO', label: 'QB2QBO' },
+  { value: '3rd_party', label: '3rd Party' }
+];
+
+function renderToolsTable() {
+  const tbody = document.getElementById('tools-tbody');
+  if (!toolRows.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">No rows yet. Click "+ Add Row" below.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = toolRows.map(r => `
+    <tr data-id="${r.id}">
+      <td><input type="text" value="${escHtml(r.version||'')}" placeholder="e.g. v2.4.1" onchange="updateToolRow(${r.id},'version',this.value)"></td>
+      <td><input type="text" value="${escHtml(r.uses||'')}" placeholder="e.g. QuickBooks migration" onchange="updateToolRow(${r.id},'uses',this.value)"></td>
+      <td><textarea rows="2" placeholder="Add notes…" onchange="updateToolRow(${r.id},'notes',this.value)">${escHtml(r.notes||'')}</textarea></td>
+      <td>
+        <select onchange="updateToolRow(${r.id},'migType',this.value)">
+          ${MIGRATION_TYPES.map(o => `<option value="${o.value}" ${r.migType===o.value?'selected':''}>${o.label}</option>`).join('')}
+        </select>
+      </td>
+      <td><input type="text" value="${escHtml(r.projectUsed||'')}" placeholder="e.g. Project Alpha" onchange="updateToolRow(${r.id},'projectUsed',this.value)"></td>
+      <td><button class="del-row-btn" title="Delete row" onclick="deleteToolRow(${r.id})">✕</button></td>
+    </tr>`).join('');
+}
+
+function addToolRow() {
+  toolRows.push({ id: Date.now(), version:'', uses:'', notes:'', migType:'' });
+  saveTools(); renderToolsTable(); updateHomeCounts();
+}
+
+function updateToolRow(id, field, value) {
+  const row = toolRows.find(r => r.id === id);
+  if (row) { row[field] = value; saveTools(); }
+}
+
+function deleteToolRow(id) {
+  toolRows = toolRows.filter(r => r.id !== id);
+  saveTools(); renderToolsTable(); updateHomeCounts();
+  showToast('🗑️ Row deleted');
+}
+
+// ═══════════════════════════════════════════════════
+//  CALENDAR
+// ═══════════════════════════════════════════════════
+function openCalendarAdd() {
+  document.getElementById('cal-modal').classList.add('open');
+  ['cal-project','cal-notes'].forEach(id => document.getElementById(id).value = '');
+  ['cal-cutoff','cal-phase1','cal-golive'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cal-status').value = 'upcoming';
+}
+function closeCalModal() { document.getElementById('cal-modal').classList.remove('open'); }
+
+function fmtDate(val) {
+  if (!val) return '—';
+  const d = new Date(val);
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function saveCalEntry() {
+  const project = document.getElementById('cal-project').value.trim();
+  if (!project) { document.getElementById('cal-project').focus(); return; }
+  const cutoff  = document.getElementById('cal-cutoff').value;
+  const phase1  = document.getElementById('cal-phase1').value;
+  const golive  = document.getElementById('cal-golive').value;
+  const status  = document.getElementById('cal-status').value;
+  const notes   = document.getElementById('cal-notes').value.trim();
+
+  calEntries.push({
+    id: Date.now(), project,
+    cutoff, phase1, golive,
+    status, notes,
+    sortDate: golive || phase1 || cutoff || '9999-12-31'
+  });
+  saveCal(); closeCalModal(); renderCal(); updateHomeCounts();
+  showToast('✅ Project added to Go-Live Calendar');
+}
+
+function renderCal() {
+  const sorted = [...calEntries].sort((a,b) => a.sortDate.localeCompare(b.sortDate));
+  const body = document.getElementById('cal-body');
+  const empty = document.getElementById('cal-empty');
+  if (!sorted.length) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  body.innerHTML = sorted.map(e => {
+    const sc = { confirmed:'s-confirmed', upcoming:'s-upcoming', ongoing:'s-ongoing', completed:'s-completed', tbc:'s-tbc' }[e.status] || 's-upcoming';
+    const label = e.status.charAt(0).toUpperCase() + e.status.slice(1);
+    return `<tr>
+      <td><strong>${e.project}</strong></td>
+      <td>${e.cutoff ? `<span class="date-chip">${fmtDate(e.cutoff)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${e.phase1 ? `<span class="date-chip">${fmtDate(e.phase1)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${e.golive ? `<span class="date-chip">${fmtDate(e.golive)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="status-dot ${sc}"></span>${label}</td>
+      <td style="color:var(--muted)">${e.notes||'—'}</td>
+      <td><button class="doc-btn danger" onclick="deleteCal(${e.id})" style="padding:4px 10px;font-size:11px">Delete</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteCal(id) {
+  calEntries = calEntries.filter(e => e.id !== id);
+  saveCal(); renderCal(); updateHomeCounts();
+  showToast('🗑️ Calendar entry deleted');
+}
+
+// ═══════════════════════════════════════════════════
+//  SEARCH
+// ═══════════════════════════════════════════════════
+function doSearch() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  if (!q) return;
+  showSection('search');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  const results = documents.filter(doc => {
+    const hay = [doc.name, doc.desc, (doc.tags||[]).join(' '), doc.content.replace(/<[^>]+>/g,' ')].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+
+  // Search tools table rows
+  const migTypeLabel = v => { const m = MIGRATION_TYPES.find(t => t.value === v); return m ? m.label : ''; };
+  const toolResults = toolRows.filter(r => {
+    const hay = [r.version||'', r.uses||'', r.notes||'', r.projectUsed||'', migTypeLabel(r.migType||'')].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+
+  const totalCount = results.length + toolResults.length;
+  document.getElementById('search-count').textContent =
+    totalCount ? totalCount + ' result(s) for "' + q + '"' : 'No results for "' + q + '"';
+
+  if (!totalCount) {
+    document.getElementById('search-list').innerHTML = `<div class="no-results">
+      <div style="font-size:40px;margin-bottom:12px">🔎</div>
+      <strong>No results found for "${q}"</strong>
+      <p style="margin-top:8px;font-size:13px">Try a different keyword or browse the sections</p>
+    </div>`; return;
+  }
+
+  let html = '';
+
+  if (results.length) {
+    html += results.map(doc => `
+      <div class="result-card" onclick="viewFromSearch(${doc.id})">
+        <div class="result-title">${typeIcons[doc.type]||'📄'} ${doc.name}</div>
+        <div class="result-excerpt">${getExcerpt(doc.content.replace(/<[^>]+>/g,' '), q)}</div>
+        <div class="result-tags">
+          <span class="tag ${typeTagClass[doc.type]}">${doc.type}</span>
+          ${(doc.tags||[]).slice(0,5).map(t=>`<span class="tag" style="background:#f0f0f5;color:var(--muted)">${t}</span>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  if (toolResults.length) {
+    html += toolResults.map(r => `
+      <div class="result-card" onclick="jumpToToolRow(${r.id})">
+        <div class="result-title">🛠️ Tools &amp; Versions — ${escHtml(r.version||'(no version)')}</div>
+        <div class="result-excerpt">
+          <strong>Function:</strong> ${escHtml(r.uses||'—')} &nbsp;|&nbsp;
+          <strong>Migration Type:</strong> ${escHtml(migTypeLabel(r.migType||''))||'—'} &nbsp;|&nbsp;
+          <strong>Project Used:</strong> ${escHtml(r.projectUsed||'—')}
+          ${r.notes ? `<br><strong>Notes:</strong> ${escHtml(r.notes)}` : ''}
+        </div>
+        <div class="result-tags">
+          <span class="tag tag-tool">Tool</span>
+          <span style="font-size:10px;color:var(--muted);font-weight:600">↗ Click to jump to row</span>
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('search-list').innerHTML = html;
+}
+
+function viewFromSearch(id) { showSection('docs'); switchSubTab('all'); openDoc(id); }
+
+function jumpToToolRow(rowId) {
+  // Navigate to tools section
+  showSection('tools');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => { if(b.textContent.includes('Tools')) b.classList.add('active'); });
+  // Wait for render then scroll and highlight
+  setTimeout(() => {
+    const tr = document.querySelector(`#tools-tbody tr[data-id="${rowId}"]`);
+    if (!tr) return;
+    tr.scrollIntoView({ behavior:'smooth', block:'center' });
+    tr.classList.add('row-highlight');
+    setTimeout(() => tr.classList.remove('row-highlight'), 2500);
+  }, 80);
+}
+
+function getExcerpt(text, q) {
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx === -1) return text.substring(0, 200) + '…';
+  const s = Math.max(0, idx-80), e2 = Math.min(text.length, idx+q.length+120);
+  let ex = (s>0?'…':'') + text.substring(s,e2) + (e2<text.length?'…':'');
+  const re = new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+  return ex.replace(re,'<mark>$1</mark>');
+}
+
+// ═══════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════
+function updateHomeCounts() {
+  document.getElementById('home-count-doc').textContent   = documents.length + ' document(s)';
+  document.getElementById('home-count-tool').textContent  = toolRows.length + ' version(s)';
+  document.getElementById('home-count-guide').textContent = documents.filter(d=>d.type==='guide'||d.type==='doc').length + ' document(s)';
+  document.getElementById('home-count-notes').textContent = noteFiles.length + ' file(s)';
+  document.getElementById('home-count-cal').textContent   = calEntries.length + ' date(s) on record';
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#c0392b' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+document.getElementById('meta-modal').addEventListener('click', e => { if(e.target.id==='meta-modal') closeModal(); });
+document.getElementById('cal-modal').addEventListener('click', e => { if(e.target.id==='cal-modal') closeCalModal(); });
+document.getElementById('event-modal').addEventListener('click', e => { if(e.target.id==='event-modal') closeEventModal(); });
+
+// ═══════════════════════════════════════════════════
+//  UPCOMING EVENT REMINDER
+// ═══════════════════════════════════════════════════
+let upcomingEvent = JSON.parse(localStorage.getItem('intranet_event') || 'null');
+
+function renderEvent() {
+  const labelEl = document.getElementById('event-label');
+  const dateEl  = document.getElementById('event-date-label');
+  if (!upcomingEvent || !upcomingEvent.name) {
+    labelEl.textContent = 'No event set';
+    dateEl.textContent = '';
+    return;
+  }
+  labelEl.textContent = upcomingEvent.name;
+  if (upcomingEvent.date) {
+    const d = new Date(upcomingEvent.date + 'T00:00:00');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = Math.round((d - today) / 86400000);
+    let countdown = diff === 0 ? '🔴 Today!' : diff === 1 ? '🟠 Tomorrow' : diff > 0 ? `🟡 In ${diff} days` : `⚫ ${Math.abs(diff)} day(s) ago`;
+    dateEl.textContent = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + ' · ' + countdown;
+  } else {
+    dateEl.textContent = upcomingEvent.notes || '';
+  }
+}
+
+function openEventModal() {
+  document.getElementById('event-modal').classList.add('open');
+  document.getElementById('event-name-input').value  = upcomingEvent?.name  || '';
+  document.getElementById('event-date-input').value  = upcomingEvent?.date  || '';
+  document.getElementById('event-notes-input').value = upcomingEvent?.notes || '';
+}
+function closeEventModal() { document.getElementById('event-modal').classList.remove('open'); }
+
+function saveEvent() {
+  const name  = document.getElementById('event-name-input').value.trim();
+  if (!name) { document.getElementById('event-name-input').focus(); return; }
+  upcomingEvent = {
+    name,
+    date:  document.getElementById('event-date-input').value,
+    notes: document.getElementById('event-notes-input').value.trim()
+  };
+  localStorage.setItem('intranet_event', JSON.stringify(upcomingEvent));
+  closeEventModal(); renderEvent();
+  showToast('📌 Event saved!');
+}
+
+function clearEvent() {
+  upcomingEvent = null;
+  localStorage.removeItem('intranet_event');
+  closeEventModal(); renderEvent();
+  showToast('🗑️ Event cleared');
+}
+
+renderEvent();
+</script>
+</body>
+</html>
